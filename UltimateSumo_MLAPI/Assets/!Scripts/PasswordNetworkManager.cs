@@ -74,7 +74,7 @@ public class PasswordNetworkManager : MonoBehaviour
         switch (NetworkManager.Singleton.ConnectedClients.Count)
         {
             case 1:
-                spawnPos = new Vector3(0f, 0f, 0f);
+                spawnPos = new Vector3(2f, 0f, 0f);
                 spawnRot = Quaternion.Euler(0f, 180f, 0f);
                 break;
         }

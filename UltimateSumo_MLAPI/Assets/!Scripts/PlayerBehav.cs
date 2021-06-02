@@ -52,6 +52,28 @@ public class PlayerBehav : NetworkBehaviour
     private void AttackClientRpc()
     {
         AttackArea.SetActive(true);
-        Debug.Log(this.transform.name + " : is Attack");
+        Invoke("AttackEnd", 0.3f);
+    }
+
+    void AttackEnd()
+    {
+        AttackArea.SetActive(false);
+    }
+
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        if (!IsOwner) { return; }
+
+        if (collision.gameObject.CompareTag("Attack"))
+        {
+            if (IsServer)
+            {
+                this.transform.position += new Vector3(-50f, 0f, 0f) * Time.deltaTime;
+            }
+            else
+            {
+                this.transform.position += new Vector3(50f, 0f, 0f) * Time.deltaTime;
+            }
+        }
     }
 }
