@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using MLAPI;
+using MLAPI.Messaging;
 
 public class PlayerBehav : NetworkBehaviour
 {
@@ -13,8 +14,6 @@ public class PlayerBehav : NetworkBehaviour
 
     void Start()
     {
-        if (!IsOwner) { return; }
-
         AttackArea = this.gameObject.transform.GetChild(1).gameObject;
     }
 
@@ -40,6 +39,18 @@ public class PlayerBehav : NetworkBehaviour
     {
         if (!IsOwner) { return; }
 
+        AttackServerRpc();
+    }
+
+    [ServerRpc]
+    private void AttackServerRpc()
+    {
+        AttackClientRpc();
+    }
+
+    [ClientRpc]
+    private void AttackClientRpc()
+    {
         AttackArea.SetActive(true);
         Debug.Log(this.transform.name + " : is Attack");
     }
