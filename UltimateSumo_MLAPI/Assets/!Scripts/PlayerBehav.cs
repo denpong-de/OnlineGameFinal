@@ -11,6 +11,7 @@ public class PlayerBehav : NetworkBehaviour
 {
     [SerializeField] private float moveSpeed;
     private Vector2 moveVec;
+    bool isLeft;
 
     GameObject attackArea;
 
@@ -21,6 +22,8 @@ public class PlayerBehav : NetworkBehaviour
         attackArea = this.gameObject.transform.GetChild(1).gameObject;
 
         blockDebugging = this.gameObject.transform.GetChild(2).gameObject;
+
+        if (IsServer) { isLeft = true; }
     }
 
     void FixedUpdate()
@@ -113,7 +116,7 @@ public class PlayerBehav : NetworkBehaviour
 
         if (collision.gameObject.CompareTag("Attack") && !isBlock)
         {
-            if (IsServer)
+            if (isLeft)
             {
                 this.transform.position += new Vector3(-50f, 0f, 0f) * Time.deltaTime;
             }

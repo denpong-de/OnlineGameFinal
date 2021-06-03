@@ -498,5 +498,3 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   moveSpeed: 10
-  isBlock:
-    m_InternalValue: 0
