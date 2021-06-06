@@ -9,21 +9,30 @@ using System;
 
 public class PlayerBehav : NetworkBehaviour
 {
+    //MOVE
     [SerializeField] private float moveSpeed;
     private Vector2 moveVec;
     bool isLeft;
 
+    //ATTACK
     GameObject attackArea;
 
-    GameObject blockDebugging;
+    //BLOCK
+    GameObject blockArea;
+    public bool isBlock;
+
+    //THROW
+    GameObject throwArea;
 
     void Start()
     {
+        if (IsServer) { isLeft = true; }
+
         attackArea = this.gameObject.transform.GetChild(1).gameObject;
 
-        blockDebugging = this.gameObject.transform.GetChild(2).gameObject;
+        blockArea = this.gameObject.transform.GetChild(2).gameObject;
 
-        if (IsServer) { isLeft = true; }
+        throwArea = this.gameObject.transform.GetChild(3).gameObject;
     }
 
     void FixedUpdate()
@@ -69,13 +78,11 @@ public class PlayerBehav : NetworkBehaviour
         attackArea.SetActive(false);
     }
 
-    //------------------------------------ Block -----------------------------------------------
-    bool isBlock;
+    //------------------------------------ BLOCK -----------------------------------------------
     public void OnBlock(InputValue value)
     {
         if (!IsOwner) { return; }
 
-        Debug.Log(value.Get<float>());
         switch (value.Get<float>())
         {
             case 0:
@@ -101,28 +108,72 @@ public class PlayerBehav : NetworkBehaviour
         switch (newValue)
         {
             case true:
-                blockDebugging.SetActive(true);
+                blockArea.SetActive(true);
                 break;
             case false:
-                blockDebugging.SetActive(false);
+                blockArea.SetActive(false);
                 break;
         }
     }
 
-    //---------------------------------- Collision ---------------------------------------------
+    //------------------------------------ THROW -----------------------------------------------
+    public void OnThrow()
+    {
+        if (!IsOwner) { return; }
+
+        ThrowServerRpc();
+    }
+
+    [ServerRpc]
+    private void ThrowServerRpc()
+    {
+        ThrowClientRpc();
+    }
+
+    [ClientRpc]
+    private void ThrowClientRpc()
+    {
+        throwArea.SetActive(true);
+        Invoke("ThrowEnd", 0.3f);
+    }
+
+    public void ThrowEnd()
+    {
+        throwArea.SetActive(false);
+    }
+
+    public void SwitchSide()
+    {
+        switch (isLeft)
+        {
+            case true:
+                this.transform.rotation = Quaternion.Euler(0f, 180f, 0f);
+                this.transform.position = this.transform.position + new Vector3(2f, 0f, 0f);
+                isLeft = false;
+                break;
+            case false:
+                this.transform.rotation = Quaternion.Euler(0f, 0f, 0f);
+                this.transform.position = this.transform.position + new Vector3(-2f, 0f, 0f);
+                isLeft = true;
+                break;
+        }
+    }
+
+    //---------------------------------- COLLISION ---------------------------------------------
     private void OnTriggerEnter2D(Collider2D collision)
     {
         if (!IsOwner) { return; }
 
         if (collision.gameObject.CompareTag("Attack") && !isBlock)
         {
-            if (isLeft)
+            switch (isLeft)
             {
-                this.transform.position += new Vector3(-50f, 0f, 0f) * Time.deltaTime;
-            }
-            else
-            {
-                this.transform.position += new Vector3(50f, 0f, 0f) * Time.deltaTime;
+                case true:
+                    this.transform.position += new Vector3(-50f, 0f, 0f) * Time.deltaTime;
+                    break;
+                case false:
+                    this.transform.position += new Vector3(50f, 0f, 0f) * Time.deltaTime;
+                    break;
             }
         }
     }

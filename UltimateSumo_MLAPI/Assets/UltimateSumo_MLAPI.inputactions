@@ -22,6 +22,14 @@
                     "interactions": ""
                 },
                 {
+                    "name": "Throw",
+                    "type": "Button",
+                    "id": "7b632379-21eb-42a2-af9c-ac3668d73545",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
                     "name": "Block",
                     "type": "Value",
                     "id": "454c700d-0167-443e-8a84-63b1281f0afb",
@@ -270,6 +278,61 @@
                     "processors": "",
                     "groups": "XR",
                     "action": "Block",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "693fbd5d-bad6-44a6-ba6c-db1e38a61862",
+                    "path": "<Gamepad>/rightTrigger",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";Gamepad",
+                    "action": "Throw",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "fd732007-470f-4634-b79e-04c67d5653a0",
+                    "path": "<Keyboard>/h",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";Keyboard&Mouse",
+                    "action": "Throw",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "b6aa5b91-c50b-44dd-8b51-aacd7333ca5f",
+                    "path": "<Touchscreen>/primaryTouch/tap",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";Touch",
+                    "action": "Throw",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "3ad43ab9-ed65-4d1e-8b3e-b06e46a56ea5",
+                    "path": "<Joystick>/trigger",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Joystick",
+                    "action": "Throw",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "c7e1dd71-f0f2-481d-93b6-c09258c89f41",
+                    "path": "<XRController>/{PrimaryAction}",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "XR",
+                    "action": "Throw",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }
