@@ -176,7 +176,7 @@ GameObject:
   - component: {fileID: 8455232172135031441}
   m_Layer: 0
   m_Name: BlockArea Debugging
-  m_TagString: Block
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -314,7 +314,6 @@ GameObject:
   m_Component:
   - component: {fileID: 4419003211289135576}
   - component: {fileID: 5872455621641866728}
-  - component: {fileID: 2545556621570625638}
   m_Layer: 0
   m_Name: BlockArea
   m_TagString: Block
@@ -363,18 +362,6 @@ BoxCollider2D:
   serializedVersion: 2
   m_Size: {x: 2.6457667, y: 1.0323989}
   m_EdgeRadius: 0
---- !u!114 &2545556621570625638
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5546462214606125047}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 70eee4e155d36ad4cbf1bd49b7c57dce, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &7668994918464831963
 GameObject:
   m_ObjectHideFlags: 0
@@ -647,9 +634,9 @@ MonoBehaviour:
   FixedSendsPerSecond: 60
   AssumeSyncedSends: 1
   InterpolatePosition: 1
-  SnapDistance: 10
+  SnapDistance: 20
   InterpolateServer: 1
-  MinMeters: 0.05
+  MinMeters: 0.01
   MinDegrees: 1.5
   ExtrapolatePosition: 0
   MaxSendsToExtrapolate: 5
@@ -723,4 +710,5 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   moveSpeed: 10
-  isBlock: 0
+  gameValues: {fileID: 11400000, guid: 988f9bf2ebf5a6b4ea1d1a25bffd753f, type: 2}
+  forceBlock: 1

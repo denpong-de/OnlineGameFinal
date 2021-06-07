@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.UI;
 using MLAPI;
 using MLAPI.Messaging;
 using MLAPI.NetworkVariable;
@@ -13,18 +14,41 @@ public class PlayerBehav : NetworkBehaviour
     [SerializeField] private float moveSpeed;
     private Vector2 moveVec;
     bool isLeft;
+    bool canMove = true;
 
     //ATTACK
     GameObject attackArea;
 
     //BLOCK
     GameObject blockArea;
-    public bool isBlock;
+    bool isBlock;
+    public GameValueScriptableObject gameValues;
 
     //THROW
     GameObject throwArea;
+    public bool isThrow
+    {
+        get { return _isThrow; }
+        set
+        {
+            _isThrow = value;
+            canMove = false;
+            SwitchSideDelay(0.5f);
+            StartCoroutine(KnockbackDelay(0.5f, 25f));
+        }
+    }
+    private bool _isThrow;
 
-    void Start()
+    //KNOCKBACK
+    Text knockbackP1Text, knockbackP2Text;
+    private NetworkVariableFloat knockbackValue = new NetworkVariableFloat(0f);
+    float knockbackMultiply;
+
+    //DEBUGGING
+    [Header("Debugging")]
+    [SerializeField] bool forceBlock;
+
+    void Awake()
     {
         if (IsServer) { isLeft = true; }
 
@@ -33,11 +57,38 @@ public class PlayerBehav : NetworkBehaviour
         blockArea = this.gameObject.transform.GetChild(2).gameObject;
 
         throwArea = this.gameObject.transform.GetChild(3).gameObject;
+        gameValues.switchSideTrigger = false; //Set to default
+
+        knockbackP1Text = GameObject.FindGameObjectWithTag("KnockT1").GetComponent<Text>();
+        knockbackP1Text.text = "0%";
+        knockbackP2Text = GameObject.FindGameObjectWithTag("KnockT2").GetComponent<Text>();
+        knockbackP2Text.text = "0%";
+    }
+
+    private void Update()
+    {
+        if (!isBlock) { return; }
+        if (isThrow == gameValues.switchSideTrigger) { return; }
+
+        isThrow = gameValues.switchSideTrigger;
     }
 
     void FixedUpdate()
     {
+        if (!canMove) { return; }
+
         Move();
+    }
+
+    //------------------------------ SYNC NETWORK VALUES ----------------------------------------
+    void OnEnable()
+    {
+        knockbackValue.OnValueChanged += OnKnockbackValueChanged;
+    }
+
+    void OnDisable()
+    {
+        knockbackValue.OnValueChanged -= OnKnockbackValueChanged;
     }
 
     //------------------------------------- MOVE ------------------------------------------------
@@ -86,6 +137,7 @@ public class PlayerBehav : NetworkBehaviour
         switch (value.Get<float>())
         {
             case 0:
+                if (forceBlock) { break; }
                 isBlock = false;
                 BlockServerRpc(isBlock);
                 break;
@@ -122,6 +174,7 @@ public class PlayerBehav : NetworkBehaviour
         if (!IsOwner) { return; }
 
         ThrowServerRpc();
+        canMove = false;
     }
 
     [ServerRpc]
@@ -137,12 +190,13 @@ public class PlayerBehav : NetworkBehaviour
         Invoke("ThrowEnd", 0.3f);
     }
 
-    public void ThrowEnd()
+    private void ThrowEnd()
     {
         throwArea.SetActive(false);
+        canMove = true;
     }
 
-    public void SwitchSide()
+    void SwitchSide()
     {
         switch (isLeft)
         {
@@ -159,6 +213,76 @@ public class PlayerBehav : NetworkBehaviour
         }
     }
 
+    public void SwitchSideDelay(float time)
+    {
+        Invoke("SwitchSide", time);
+    }
+
+    [ServerRpc]
+    public void IsThrowServerRpc()
+    {
+        IsThrowClientRpc();
+    }
+
+    [ClientRpc]
+    private void IsThrowClientRpc()
+    {
+        switch (gameValues.switchSideTrigger)
+        {
+            case true:
+                gameValues.switchSideTrigger = false;
+                break;
+            case false:
+                gameValues.switchSideTrigger = true;
+                break;
+        }
+    }
+
+    //---------------------------------- KNOCKBACK ---------------------------------------------
+    void OnKnockbackValueChanged(float oldValue, float newValue)
+    {
+        if (!IsClient) { return; }
+
+        if (IsOwnedByServer)
+        {
+            knockbackP1Text.text = newValue + "%";
+        }
+        else
+        {
+            knockbackP2Text.text = newValue + "%";
+        }
+    }
+
+    [ServerRpc]
+    public void ChangeKnockbackValueServerRpc(float value)
+    {
+        knockbackValue.Value += value;
+    }
+
+    private void Knockback(float value)
+    {
+        knockbackMultiply = 1 + (knockbackValue.Value / 100);
+
+        switch (isLeft)
+        {
+            case true:
+                this.transform.position += new Vector3(-50f * knockbackMultiply, 0f, 0f) * Time.deltaTime;
+                break;
+            case false:
+                this.transform.position += new Vector3(50f * knockbackMultiply, 0f, 0f) * Time.deltaTime;
+                break;
+        }
+
+        ChangeKnockbackValueServerRpc(value);
+        canMove = true;
+    }
+
+    private IEnumerator KnockbackDelay(float time,float value)
+    {
+        yield return new WaitForSeconds(time);
+        Knockback(value);
+    }
+
     //---------------------------------- COLLISION ---------------------------------------------
     private void OnTriggerEnter2D(Collider2D collision)
     {
@@ -166,15 +290,7 @@ public class PlayerBehav : NetworkBehaviour
 
         if (collision.gameObject.CompareTag("Attack") && !isBlock)
         {
-            switch (isLeft)
-            {
-                case true:
-                    this.transform.position += new Vector3(-50f, 0f, 0f) * Time.deltaTime;
-                    break;
-                case false:
-                    this.transform.position += new Vector3(50f, 0f, 0f) * Time.deltaTime;
-                    break;
-            }
+            Knockback(10);
         }
     }
 }

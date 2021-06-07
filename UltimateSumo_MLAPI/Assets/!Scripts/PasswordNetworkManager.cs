@@ -9,6 +9,7 @@ public class PasswordNetworkManager : MonoBehaviour
 {
     [SerializeField] private InputField passwordInputField;
     [SerializeField] private GameObject passwordEntryUI;
+    [SerializeField] private GameObject gameoverUI;
 
     private void Start()
     {
@@ -38,6 +39,22 @@ public class PasswordNetworkManager : MonoBehaviour
         NetworkManager.Singleton.StartClient();
     }
 
+    public void Leave()
+    {
+        if (NetworkManager.Singleton.IsHost)
+        {
+            NetworkManager.Singleton.StopHost();
+            NetworkManager.Singleton.ConnectionApprovalCallback -= ApprovalCheck;
+        }
+        else if (NetworkManager.Singleton.IsClient)
+        {
+            NetworkManager.Singleton.StopClient();
+        }
+
+        passwordEntryUI.SetActive(true);
+        gameoverUI.SetActive(false);
+    }
+
     private void HandleServerStarted()
     {
         if (NetworkManager.Singleton.IsHost)
@@ -59,6 +76,7 @@ public class PasswordNetworkManager : MonoBehaviour
         if (clientId == NetworkManager.Singleton.LocalClientId)
         {
             passwordEntryUI.SetActive(true);
+            gameoverUI.SetActive(false);
         }
     }
 

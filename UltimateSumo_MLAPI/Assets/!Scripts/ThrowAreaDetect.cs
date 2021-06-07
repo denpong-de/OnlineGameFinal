@@ -16,8 +16,8 @@ public class ThrowAreaDetect : MonoBehaviour
     {
         if (collision.gameObject.CompareTag("Block"))
         {
-            playerBehav.ThrowEnd();
-            playerBehav.SwitchSide();
+            playerBehav.IsThrowServerRpc();
+            playerBehav.SwitchSideDelay(0.5F);
         }
     }
 }
