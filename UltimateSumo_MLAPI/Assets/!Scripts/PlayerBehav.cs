@@ -39,6 +39,20 @@ public class PlayerBehav : NetworkBehaviour
     }
     private bool _isThrow;
 
+    //PLAYER NAME
+    Text playerNameP1Text, playerNameP2Text;
+    private NetworkVariableString playerName = new NetworkVariableString();
+    public bool isChangeName
+    {
+        get { return _isChangeName; }
+        set
+        {
+            _isChangeName = value;
+            SetHostNameServerRpc();
+        }
+    }
+    private bool _isChangeName;
+
     //KNOCKBACK
     Text knockbackP1Text, knockbackP2Text;
     private NetworkVariableFloat knockbackValue = new NetworkVariableFloat(0f);
@@ -59,6 +73,10 @@ public class PlayerBehav : NetworkBehaviour
         throwArea = this.gameObject.transform.GetChild(3).gameObject;
         gameValues.switchSideTrigger = false; //Set to default
 
+        playerNameP1Text = GameObject.FindGameObjectWithTag("NameT1").GetComponent<Text>();
+        playerNameP2Text = GameObject.FindGameObjectWithTag("NameT2").GetComponent<Text>();
+        gameValues.changeNameTrigger = false; //Set to default
+
         knockbackP1Text = GameObject.FindGameObjectWithTag("KnockT1").GetComponent<Text>();
         knockbackP1Text.text = "0%";
         knockbackP2Text = GameObject.FindGameObjectWithTag("KnockT2").GetComponent<Text>();
@@ -67,10 +85,15 @@ public class PlayerBehav : NetworkBehaviour
 
     private void Update()
     {
+        if (!_isChangeName && IsOwnedByServer) //To check Knockback trigger on other client.
+        {
+            isChangeName = gameValues.changeNameTrigger;
+        }
+
         if (!isBlock) { return; }
         if (isThrow == gameValues.switchSideTrigger) { return; }
 
-        isThrow = gameValues.switchSideTrigger;
+        isThrow = gameValues.switchSideTrigger; //To check Knockback trigger on other client.
     }
 
     void FixedUpdate()
@@ -84,11 +107,13 @@ public class PlayerBehav : NetworkBehaviour
     void OnEnable()
     {
         knockbackValue.OnValueChanged += OnKnockbackValueChanged;
+        playerName.OnValueChanged += OnPlayerNameChanged;
     }
 
     void OnDisable()
     {
         knockbackValue.OnValueChanged -= OnKnockbackValueChanged;
+        playerName.OnValueChanged -= OnPlayerNameChanged;
     }
 
     //------------------------------------- MOVE ------------------------------------------------
@@ -236,6 +261,42 @@ public class PlayerBehav : NetworkBehaviour
                 gameValues.switchSideTrigger = true;
                 break;
         }
+    }
+
+    //--------------------------------- PLAYER NAME --------------------------------------------
+    void OnPlayerNameChanged(string oldValue, string newValue)
+    {
+        if (!IsClient) { return; }
+
+        gameObject.name = newValue;
+
+        if (IsOwnedByServer)
+        {
+            playerNameP1Text.text = gameObject.name;
+        }
+        else
+        {
+            playerNameP2Text.text = gameObject.name;
+            gameValues.changeNameTrigger = true;
+        }
+    }
+
+    [ServerRpc]
+    public void SetPlayerNameServerRpc(string name)
+    {
+        playerName.Value = name;
+    }
+
+    [ServerRpc]
+    private void SetHostNameServerRpc()
+    {
+        SetHostNameClientRpc();
+    }
+
+    [ClientRpc]
+    private void SetHostNameClientRpc()
+    {
+        playerNameP1Text.text = gameObject.name;
     }
 
     //---------------------------------- KNOCKBACK ---------------------------------------------

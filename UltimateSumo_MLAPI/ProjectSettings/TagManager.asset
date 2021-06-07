@@ -10,6 +10,8 @@ TagManager:
   - Death
   - KnockT1
   - KnockT2
+  - NameT1
+  - NameT2
   layers:
   - Default
   - TransparentFX

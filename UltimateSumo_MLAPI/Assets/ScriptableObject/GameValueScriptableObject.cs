@@ -4,4 +4,5 @@ using UnityEngine;
 public class GameValueScriptableObject : ScriptableObject
 {
     public bool switchSideTrigger;
+    public bool changeNameTrigger;
 }

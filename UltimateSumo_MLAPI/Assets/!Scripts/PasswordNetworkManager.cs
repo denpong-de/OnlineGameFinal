@@ -1,8 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
 using MLAPI;
-using MLAPI.Spawning;
-using System;
 using System.Text;
 
 public class PasswordNetworkManager : MonoBehaviour
@@ -68,6 +66,7 @@ public class PasswordNetworkManager : MonoBehaviour
         if(clientId == NetworkManager.Singleton.LocalClientId)
         {
             passwordEntryUI.SetActive(false);
+            SetPlayerName(clientId);
         }
     }
 
@@ -100,4 +99,19 @@ public class PasswordNetworkManager : MonoBehaviour
         callback(true, null, approveConnection, spawnPos, spawnRot);
     }
 
+    //---------------------------------- CHANGE NAME ---------------------------------------------
+    void SetPlayerName(ulong clientid)
+    {
+        if(!NetworkManager.Singleton.ConnectedClients.TryGetValue(clientid,out var networkClient))
+        {
+            return;
+        }
+        if(!networkClient.PlayerObject.TryGetComponent<PlayerBehav>(out var playerBehav))
+        {
+            return;
+        }
+
+        string playerName = PlayerPrefs.GetString("PlayerName","Player" + Random.Range(0,9999));
+        playerBehav.SetPlayerNameServerRpc(playerName);
+    }
 }
