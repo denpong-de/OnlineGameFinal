@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using MLAPI;
 using System.Text;
+using System.Net;
 
 public class PasswordNetworkManager : MonoBehaviour
 {
@@ -14,6 +15,9 @@ public class PasswordNetworkManager : MonoBehaviour
         NetworkManager.Singleton.OnServerStarted += HandleServerStarted;
         NetworkManager.Singleton.OnClientConnectedCallback += HandleClientConnected;
         NetworkManager.Singleton.OnClientDisconnectCallback += HandleClientDisconnect;
+
+        string externalIp = new WebClient().DownloadString("http://icanhazip.com/");
+        Debug.Log("Your ip adress is : " + externalIp);
     }
 
     private void OnDestroy()
