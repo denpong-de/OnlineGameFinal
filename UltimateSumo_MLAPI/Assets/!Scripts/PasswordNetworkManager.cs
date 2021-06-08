@@ -1,14 +1,27 @@
 using UnityEngine;
 using UnityEngine.UI;
 using MLAPI;
+using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Text;
-using System.Net;
+using System.IO;
+using MLAPI.Transports.PhotonRealtime;
+using MLAPI.Transports;
+using Random = UnityEngine.Random;
 
 public class PasswordNetworkManager : MonoBehaviour
 {
+    [SerializeField] private InputField roomNameInputField;
     [SerializeField] private InputField passwordInputField;
+    [SerializeField] private Text roomNameWaitingText;    
+    [SerializeField] private Text passwordWaitingText;
     [SerializeField] private GameObject passwordEntryUI;
+    [SerializeField] private GameObject waitingUI;
     [SerializeField] private GameObject gameoverUI;
+
+    PhotonRealtimeTransport realtimeTransport;
+    GameManager gameManager;
 
     private void Start()
     {
@@ -16,8 +29,8 @@ public class PasswordNetworkManager : MonoBehaviour
         NetworkManager.Singleton.OnClientConnectedCallback += HandleClientConnected;
         NetworkManager.Singleton.OnClientDisconnectCallback += HandleClientDisconnect;
 
-        string externalIp = new WebClient().DownloadString("http://icanhazip.com/");
-        Debug.Log("Your ip adress is : " + externalIp);
+        realtimeTransport = NetworkManager.Singleton.GetComponent<PhotonRealtimeTransport>();
+        gameManager = GameObject.FindGameObjectWithTag("GameController").GetComponent<GameManager>();
     }
 
     private void OnDestroy()
@@ -31,12 +44,25 @@ public class PasswordNetworkManager : MonoBehaviour
 
     public void Host()
     {
+        if(roomNameInputField.text == "")
+        {
+            roomNameInputField.text = RandomStringGenerator();
+        }
+        realtimeTransport.RoomName = roomNameInputField.text;
+        roomNameWaitingText.text = "Room Name: " + roomNameInputField.text;
+        passwordWaitingText.text = "Password: " + passwordInputField.text;
+
         NetworkManager.Singleton.ConnectionApprovalCallback += ApprovalCheck;
         NetworkManager.Singleton.StartHost(new Vector3(-2f,0f,0f));
+
+        waitingUI.SetActive(true);
+        gameManager.gameStart = false;
     }
 
     public void Client()
     {
+        realtimeTransport.RoomName = roomNameInputField.text;
+
         NetworkManager.Singleton.NetworkConfig.ConnectionData = Encoding.ASCII.GetBytes(passwordInputField.text);
         NetworkManager.Singleton.StartClient();
     }
@@ -53,6 +79,7 @@ public class PasswordNetworkManager : MonoBehaviour
             NetworkManager.Singleton.StopClient();
         }
 
+        if (waitingUI.activeInHierarchy) { waitingUI.SetActive(false); }
         passwordEntryUI.SetActive(true);
         gameoverUI.SetActive(false);
     }
@@ -117,5 +144,13 @@ public class PasswordNetworkManager : MonoBehaviour
 
         string playerName = PlayerPrefs.GetString("PlayerName","Player" + Random.Range(0,9999));
         playerBehav.SetPlayerNameServerRpc(playerName);
+    }
+
+    //------------------------------- roomName GENERATOR -----------------------------------------
+    private string RandomStringGenerator()
+    {
+        string randomString = Path.GetRandomFileName();
+        randomString = randomString.Replace(".", string.Empty);
+        return randomString;
     }
 }

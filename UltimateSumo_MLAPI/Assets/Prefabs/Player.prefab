@@ -709,6 +709,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 377ec3817131f314496b8d91356e5cfc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  moveSpeed: 10
+  moveSpeedWhenBlock: 5
+  moveSpeedNormal: 10
   gameValues: {fileID: 11400000, guid: 988f9bf2ebf5a6b4ea1d1a25bffd753f, type: 2}
-  forceBlock: 1
+  forceBlock: 0

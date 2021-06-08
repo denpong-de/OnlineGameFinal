@@ -11,17 +11,21 @@ using System;
 public class PlayerBehav : NetworkBehaviour
 {
     //MOVE
-    [SerializeField] private float moveSpeed;
+    [SerializeField] private float moveSpeedWhenBlock;
+    [SerializeField] private float moveSpeedNormal;
+    private float moveSpeed;
     private Vector2 moveVec;
     bool isLeft;
     bool canMove = true;
 
     //ATTACK
     GameObject attackArea;
+    bool pressAttack;
 
     //BLOCK
     GameObject blockArea;
-    bool isBlock;
+    bool pressBlock;
+    float blockValue;
     public GameValueScriptableObject gameValues;
 
     //THROW
@@ -38,6 +42,7 @@ public class PlayerBehav : NetworkBehaviour
         }
     }
     private bool _isThrow;
+    bool pressThrow;
 
     //PLAYER NAME
     Text playerNameP1Text, playerNameP2Text;
@@ -66,6 +71,8 @@ public class PlayerBehav : NetworkBehaviour
     {
         if (IsServer) { isLeft = true; }
 
+        moveSpeed = moveSpeedNormal;
+
         attackArea = this.gameObject.transform.GetChild(1).gameObject;
 
         blockArea = this.gameObject.transform.GetChild(2).gameObject;
@@ -90,7 +97,7 @@ public class PlayerBehav : NetworkBehaviour
             isChangeName = gameValues.changeNameTrigger;
         }
 
-        if (!isBlock) { return; }
+        if (!pressBlock) { return; }
         if (isThrow == gameValues.switchSideTrigger) { return; }
 
         isThrow = gameValues.switchSideTrigger; //To check Knockback trigger on other client.
@@ -133,7 +140,11 @@ public class PlayerBehav : NetworkBehaviour
     {
         if (!IsOwner) { return; }
 
+        if (pressBlock || pressThrow) { return; }
+
         AttackServerRpc();
+        pressAttack = true;
+        canMove = false;
     }
 
     [ServerRpc]
@@ -152,6 +163,8 @@ public class PlayerBehav : NetworkBehaviour
     void AttackEnd()
     {
         attackArea.SetActive(false);
+        pressAttack = false;
+        canMove = true;
     }
 
     //------------------------------------ BLOCK -----------------------------------------------
@@ -159,16 +172,22 @@ public class PlayerBehav : NetworkBehaviour
     {
         if (!IsOwner) { return; }
 
-        switch (value.Get<float>())
+        blockValue = value.Get<float>();
+
+        switch (blockValue)
         {
             case 0:
-                if (forceBlock) { break; }
-                isBlock = false;
-                BlockServerRpc(isBlock);
+                if (forceBlock) { break; } //For debugging
+                if (pressAttack || pressThrow) { blockValue = 0; }
+                pressBlock = false;
+                moveSpeed = moveSpeedNormal;
+                BlockServerRpc(pressBlock);
                 break;
             case 1:
-                isBlock = true;
-                BlockServerRpc(isBlock);
+                if (pressAttack || pressThrow) { blockValue = 0; }
+                pressBlock = true;
+                moveSpeed = moveSpeedWhenBlock;
+                BlockServerRpc(pressBlock);
                 break;
         }
     }
@@ -198,8 +217,11 @@ public class PlayerBehav : NetworkBehaviour
     {
         if (!IsOwner) { return; }
 
+        if (pressBlock || pressAttack) { return; }
+
         ThrowServerRpc();
         canMove = false;
+        pressThrow = true;
     }
 
     [ServerRpc]
@@ -219,6 +241,7 @@ public class PlayerBehav : NetworkBehaviour
     {
         throwArea.SetActive(false);
         canMove = true;
+        pressThrow = false;
     }
 
     void SwitchSide()
@@ -349,7 +372,7 @@ public class PlayerBehav : NetworkBehaviour
     {
         if (!IsOwner) { return; }
 
-        if (collision.gameObject.CompareTag("Attack") && !isBlock)
+        if (collision.gameObject.CompareTag("Attack") && !pressBlock)
         {
             Knockback(10);
         }
