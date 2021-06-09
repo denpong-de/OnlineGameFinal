@@ -14,6 +14,7 @@ public class GameManager : MonoBehaviour
     public GameObject[] players;
     bool isReady; 
     public bool gameStart;
+    public bool isCoutdown;
     int countdownValue = 4;
 
     [SerializeField] private Button playAgainButton;
@@ -45,9 +46,9 @@ public class GameManager : MonoBehaviour
             {
                 if (!countdownText.isActiveAndEnabled) { countdownText.enabled = true; }
                 StartCoroutine(CountDown());
+                isCoutdown = true;
                 gameStart = true;
                 isReady = false;
-
                 playAgainButton.interactable = true;
             }
         }
@@ -77,6 +78,7 @@ public class GameManager : MonoBehaviour
             countdownText.text = "4";
             countdownText.fontSize = 100;
             countdownText.enabled = false;
+            isCoutdown = false;
             countdownValue = 4;
         }
     }
