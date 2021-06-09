@@ -65,6 +65,8 @@ public class PasswordNetworkManager : MonoBehaviour
 
         NetworkManager.Singleton.NetworkConfig.ConnectionData = Encoding.ASCII.GetBytes(passwordInputField.text);
         NetworkManager.Singleton.StartClient();
+
+        gameManager.gameStart = false;
     }
 
     public void Leave()

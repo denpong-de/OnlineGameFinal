@@ -58,6 +58,9 @@ public class PlayerBehav : NetworkBehaviour
     }
     private bool _isChangeName;
 
+    //COOLDOWN
+    bool isCooldown;
+
     //KNOCKBACK
     Text knockbackP1Text, knockbackP2Text;
     private NetworkVariableFloat knockbackValue = new NetworkVariableFloat(0f);
@@ -67,6 +70,7 @@ public class PlayerBehav : NetworkBehaviour
     [Header("Debugging")]
     [SerializeField] bool forceBlock;
 
+    //------------------------------ Awake, Start, Update --------------------------------------
     void Awake()
     {
         if (IsServer) { isLeft = true; }
@@ -105,7 +109,7 @@ public class PlayerBehav : NetworkBehaviour
 
     void FixedUpdate()
     {
-        if (!canMove) { return; }
+        if (!canMove || isCooldown) { return; }
 
         Move();
     }
@@ -135,12 +139,24 @@ public class PlayerBehav : NetworkBehaviour
         this.transform.position += new Vector3(moveVec.x * moveSpeed, 0f, 0f) * Time.deltaTime;
     }
 
+    private void StopPush()
+    {
+        if (!isLeft && moveVec.x == -1)
+        {
+            moveVec.x = 0;
+        }
+        else if (isLeft && moveVec.x == 1)
+        {
+            moveVec.x = 0;
+        }
+    }
+
     //------------------------------------ ATTACK -----------------------------------------------
     public void OnAttack()
     {
         if (!IsOwner) { return; }
 
-        if (pressBlock || pressThrow) { return; }
+        if (pressBlock || pressThrow || pressAttack || isCooldown) { return; }
 
         AttackServerRpc();
         pressAttack = true;
@@ -165,6 +181,8 @@ public class PlayerBehav : NetworkBehaviour
         attackArea.SetActive(false);
         pressAttack = false;
         canMove = true;
+
+        StartCoroutine(Cooldown(0.3f));
     }
 
     //------------------------------------ BLOCK -----------------------------------------------
@@ -173,18 +191,17 @@ public class PlayerBehav : NetworkBehaviour
         if (!IsOwner) { return; }
 
         blockValue = value.Get<float>();
+        if (pressAttack || pressThrow || isCooldown) { blockValue = 0; }
 
         switch (blockValue)
         {
             case 0:
                 if (forceBlock) { break; } //For debugging
-                if (pressAttack || pressThrow) { blockValue = 0; }
                 pressBlock = false;
                 moveSpeed = moveSpeedNormal;
                 BlockServerRpc(pressBlock);
                 break;
             case 1:
-                if (pressAttack || pressThrow) { blockValue = 0; }
                 pressBlock = true;
                 moveSpeed = moveSpeedWhenBlock;
                 BlockServerRpc(pressBlock);
@@ -217,7 +234,7 @@ public class PlayerBehav : NetworkBehaviour
     {
         if (!IsOwner) { return; }
 
-        if (pressBlock || pressAttack) { return; }
+        if (pressBlock || pressAttack || isCooldown || pressThrow) { return; }
 
         ThrowServerRpc();
         canMove = false;
@@ -242,6 +259,8 @@ public class PlayerBehav : NetworkBehaviour
         throwArea.SetActive(false);
         canMove = true;
         pressThrow = false;
+
+        StartCoroutine(Cooldown(0.3f));
     }
 
     void SwitchSide()
@@ -250,12 +269,12 @@ public class PlayerBehav : NetworkBehaviour
         {
             case true:
                 this.transform.rotation = Quaternion.Euler(0f, 180f, 0f);
-                this.transform.position = this.transform.position + new Vector3(2f, 0f, 0f);
+                this.transform.position = this.transform.position + new Vector3(2.5f, 0f, 0f);
                 isLeft = false;
                 break;
             case false:
                 this.transform.rotation = Quaternion.Euler(0f, 0f, 0f);
-                this.transform.position = this.transform.position + new Vector3(-2f, 0f, 0f);
+                this.transform.position = this.transform.position + new Vector3(-2.5f, 0f, 0f);
                 isLeft = true;
                 break;
         }
@@ -322,6 +341,14 @@ public class PlayerBehav : NetworkBehaviour
         playerNameP1Text.text = gameObject.name;
     }
 
+    //------------------------------------ COOLDOWN --------------------------------------------
+    private IEnumerator Cooldown(float time)
+    {
+        isCooldown = true;
+        yield return new WaitForSeconds(time);
+        isCooldown = false;
+    }
+
     //---------------------------------- KNOCKBACK ---------------------------------------------
     void OnKnockbackValueChanged(float oldValue, float newValue)
     {
@@ -375,6 +402,14 @@ public class PlayerBehav : NetworkBehaviour
         if (collision.gameObject.CompareTag("Attack") && !pressBlock)
         {
             Knockback(10);
+        }
+    }
+
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        if (collision.gameObject.CompareTag("Player"))
+        {
+            StopPush();
         }
     }
 }

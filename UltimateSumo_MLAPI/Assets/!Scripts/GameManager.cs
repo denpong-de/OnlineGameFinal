@@ -8,7 +8,7 @@ public class GameManager : MonoBehaviour
 {
     [SerializeField] private GameObject waitingUI;
     [SerializeField] private Text countdownText;
-    public GameObject[] players;
+    GameObject[] players;
     bool isReady; 
     public bool gameStart;
     int countdownValue = 4;
@@ -32,14 +32,13 @@ public class GameManager : MonoBehaviour
         {
             if (!gameStart)
             {
+                if (!countdownText.isActiveAndEnabled) { countdownText.enabled = true; }
                 StartCoroutine(CountDown());
                 gameStart = true;
                 isReady = false;
                 if (players != null) { Array.Clear(players, 0, players.Length); }
             }
         }
-
-        Debug.Log(players.Length);
     }
 
     private IEnumerator CountDown()
@@ -61,6 +60,7 @@ public class GameManager : MonoBehaviour
         }
         else
         {
+            countdownText.text = "4";
             countdownText.enabled = false;
             countdownValue = 4;
         }
