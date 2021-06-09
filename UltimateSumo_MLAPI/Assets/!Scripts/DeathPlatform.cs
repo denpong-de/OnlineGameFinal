@@ -23,10 +23,14 @@ public class DeathPlatform : MonoBehaviour
 
             foreach (GameObject player in players)
             {
-                if(player.transform.name != collision.transform.name)
+                PlayerBehav playerBehav = player.GetComponent<PlayerBehav>();
+                playerBehav.canMove = false;
+
+                if (player.transform.name != collision.transform.name)
                 {
                     playerName.text = player.transform.name;
-                }
+                    playerBehav.ChangeWinCountServerRpc();
+                }  
             }
 
             gameOverCanvas.SetActive(true);

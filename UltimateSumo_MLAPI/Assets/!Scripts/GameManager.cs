@@ -1,3 +1,4 @@
+using MLAPI;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -6,12 +7,22 @@ using UnityEngine.UI;
 
 public class GameManager : MonoBehaviour
 {
+    public GameValueScriptableObject gameValues;
+
     [SerializeField] private GameObject waitingUI;
     [SerializeField] private Text countdownText;
-    GameObject[] players;
+    public GameObject[] players;
     bool isReady; 
     public bool gameStart;
     int countdownValue = 4;
+
+    [SerializeField] private Button playAgainButton;
+
+    private void Start()
+    {
+        gameValues.playAgainRequest = false;
+        gameValues.playAgain = 0;
+    }
 
     // Update is called once per frame
     void Update()
@@ -36,7 +47,8 @@ public class GameManager : MonoBehaviour
                 StartCoroutine(CountDown());
                 gameStart = true;
                 isReady = false;
-                if (players != null) { Array.Clear(players, 0, players.Length); }
+
+                playAgainButton.interactable = true;
             }
         }
     }
@@ -51,18 +63,58 @@ public class GameManager : MonoBehaviour
         {
             countdownText.text = countdownValue.ToString();
             StartCoroutine(CountDown());
+
         }
         else if(countdownValue == 0)
         {
             countdownText.fontSize = 100;
             countdownText.text = "Fight";
+            SetCanMove(true);
             StartCoroutine(CountDown());
         }
         else
         {
             countdownText.text = "4";
+            countdownText.fontSize = 100;
             countdownText.enabled = false;
             countdownValue = 4;
+        }
+    }
+
+    private void  SetCanMove(bool value)
+    {
+        foreach (GameObject player in players)
+        {
+            PlayerBehav playerBehav = player.GetComponent<PlayerBehav>();
+            playerBehav.canMove = value;
+        }
+    }
+
+    //--------------------------------- REVENGE MODE --------------------------------------------
+    public void PlayAgain()
+    {
+        PlayAgainRequest(NetworkManager.Singleton.LocalClientId);
+    }
+
+    void PlayAgainRequest(ulong clientid)
+    {
+        if (!NetworkManager.Singleton.ConnectedClients.TryGetValue(clientid, out var networkClient))
+        {
+            return;
+        }
+        if (!networkClient.PlayerObject.TryGetComponent<PlayerBehav>(out var playerBehav))
+        {
+            return;
+        }
+
+        if (!gameValues.playAgainRequest)
+        {
+            playerBehav.PlayAgainRequestServerRpc(true);
+            playAgainButton.interactable = false;
+        }
+        else
+        {
+            playerBehav.PlayAgainRequestServerRpc(false);
         }
     }
 }

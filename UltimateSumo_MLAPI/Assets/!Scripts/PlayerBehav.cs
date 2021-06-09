@@ -10,13 +10,17 @@ using System;
 
 public class PlayerBehav : NetworkBehaviour
 {
+    [Header("Scriptable Object")]
+    public GameValueScriptableObject gameValues;
+
     //MOVE
+    [Header("Move")]
     [SerializeField] private float moveSpeedWhenBlock;
     [SerializeField] private float moveSpeedNormal;
     private float moveSpeed;
     private Vector2 moveVec;
     bool isLeft;
-    bool canMove = true;
+    public bool canMove;
 
     //ATTACK
     GameObject attackArea;
@@ -26,7 +30,6 @@ public class PlayerBehav : NetworkBehaviour
     GameObject blockArea;
     bool pressBlock;
     float blockValue;
-    public GameValueScriptableObject gameValues;
 
     //THROW
     GameObject throwArea;
@@ -66,6 +69,27 @@ public class PlayerBehav : NetworkBehaviour
     private NetworkVariableFloat knockbackValue = new NetworkVariableFloat(0f);
     float knockbackMultiply;
 
+    //WIN
+    Text winCountP1Text, winCountP2Text;
+    private NetworkVariableInt winCountValue = new NetworkVariableInt();
+
+    //PLAY AGAIN
+    public int isPlayAgain
+    {
+        get { return _isPlayAgain; }
+        set
+        {
+            _isPlayAgain = value;
+            ResetToSpawnPos();
+            gameManager.gameStart = false;
+            gameOverUI.SetActive(false);
+            ChangeKnockbackValueServerRpc(0);
+        }
+    }
+    private int _isPlayAgain;
+    GameManager gameManager;
+    private GameObject gameOverUI;
+
     //DEBUGGING
     [Header("Debugging")]
     [SerializeField] bool forceBlock;
@@ -92,6 +116,15 @@ public class PlayerBehav : NetworkBehaviour
         knockbackP1Text.text = "0%";
         knockbackP2Text = GameObject.FindGameObjectWithTag("KnockT2").GetComponent<Text>();
         knockbackP2Text.text = "0%";
+
+        winCountP1Text = GameObject.FindGameObjectWithTag("WinT1").GetComponent<Text>();
+        winCountP1Text.text = "Win: 0";
+        winCountP2Text = GameObject.FindGameObjectWithTag("WinT2").GetComponent<Text>();
+        winCountP2Text.text = "Win: 0";
+
+        gameManager = GameObject.FindGameObjectWithTag("GameController").GetComponent<GameManager>();
+        GameObject mainCanvas = GameObject.FindGameObjectWithTag("MainCanvas");
+        gameOverUI = mainCanvas.gameObject.transform.GetChild(3).gameObject;
     }
 
     private void Update()
@@ -99,6 +132,11 @@ public class PlayerBehav : NetworkBehaviour
         if (!_isChangeName && IsOwnedByServer) //To check Knockback trigger on other client.
         {
             isChangeName = gameValues.changeNameTrigger;
+        }
+
+        if (_isPlayAgain != gameValues.playAgain)
+        {
+            isPlayAgain = gameValues.playAgain;
         }
 
         if (!pressBlock) { return; }
@@ -119,12 +157,14 @@ public class PlayerBehav : NetworkBehaviour
     {
         knockbackValue.OnValueChanged += OnKnockbackValueChanged;
         playerName.OnValueChanged += OnPlayerNameChanged;
+        winCountValue.OnValueChanged += OnWinCountChanged;
     }
 
     void OnDisable()
     {
         knockbackValue.OnValueChanged -= OnKnockbackValueChanged;
         playerName.OnValueChanged -= OnPlayerNameChanged;
+        winCountValue.OnValueChanged -= OnWinCountChanged;
     }
 
     //------------------------------------- MOVE ------------------------------------------------
@@ -367,7 +407,8 @@ public class PlayerBehav : NetworkBehaviour
     [ServerRpc]
     public void ChangeKnockbackValueServerRpc(float value)
     {
-        knockbackValue.Value += value;
+        if(value == 0) { knockbackValue.Value = value; }
+        else { knockbackValue.Value += value; } 
     }
 
     private void Knockback(float value)
@@ -392,6 +433,74 @@ public class PlayerBehav : NetworkBehaviour
     {
         yield return new WaitForSeconds(time);
         Knockback(value);
+    }
+
+    //-------------------------------------- WIN -----------------------------------------------
+    private void OnWinCountChanged(int oldValue, int newValue)
+    {
+        if (!IsClient) { return; }
+
+        if (IsOwnedByServer)
+        {
+            winCountP1Text.text = "Win: " + newValue;
+        }
+        else 
+        {
+            winCountP2Text.text = "Win: " + newValue;
+        }
+    }
+
+    [ServerRpc]
+    public void ChangeWinCountServerRpc()
+    {
+        winCountValue.Value += 1;
+    }
+
+    [ServerRpc]
+    private void MoveToSpawnPosServerRpc(Vector3 spawnPos, Vector3 spawnRot)
+    {
+        MoveToSpawnPosClientRpc(spawnPos, spawnRot);
+    }
+
+    [ClientRpc]
+    private void MoveToSpawnPosClientRpc(Vector3 spawnPos, Vector3 spawnRot)
+    {
+        gameObject.transform.position = spawnPos;
+        gameObject.transform.rotation = Quaternion.Euler(spawnRot);
+    }
+
+    //----------------------------------- PLAY AGAIN --------------------------------------------
+    [ServerRpc]
+    public void PlayAgainRequestServerRpc(bool value)
+    {
+        PlayAgainRequestClientRpc(value);
+    }
+
+    [ClientRpc]
+    private void PlayAgainRequestClientRpc(bool value)
+    {
+        switch (value)
+        {
+            case true:
+                gameValues.playAgainRequest = true;
+                break;
+            case false:
+                gameValues.playAgain ++;
+                gameValues.playAgainRequest = false;
+                break;
+        }
+    }
+
+    private void ResetToSpawnPos()
+    {
+        if (IsServer)
+        {
+            MoveToSpawnPosServerRpc(new Vector3(-2f, 0f, 0f), new Vector3(0f, 0f, 0f));
+        }
+        else
+        {
+            MoveToSpawnPosServerRpc(new Vector3(2f, 0f, 0f), new Vector3(0f, 180f, 0f));
+        }
     }
 
     //---------------------------------- COLLISION ---------------------------------------------

@@ -56,6 +56,7 @@ public class PasswordNetworkManager : MonoBehaviour
         NetworkManager.Singleton.StartHost(new Vector3(-2f,0f,0f));
 
         waitingUI.SetActive(true);
+        if (gameManager.players != null) { Array.Clear(gameManager.players, 0, gameManager.players.Length); }
         gameManager.gameStart = false;
     }
 
@@ -66,6 +67,7 @@ public class PasswordNetworkManager : MonoBehaviour
         NetworkManager.Singleton.NetworkConfig.ConnectionData = Encoding.ASCII.GetBytes(passwordInputField.text);
         NetworkManager.Singleton.StartClient();
 
+        if (gameManager.players != null) { Array.Clear(gameManager.players, 0, gameManager.players.Length); }
         gameManager.gameStart = false;
     }
 

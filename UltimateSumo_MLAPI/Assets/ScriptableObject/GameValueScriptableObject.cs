@@ -5,4 +5,7 @@ public class GameValueScriptableObject : ScriptableObject
 {
     public bool switchSideTrigger;
     public bool changeNameTrigger;
+    [Header("Play Again")]
+    public bool playAgainRequest;
+    public int playAgain;
 }

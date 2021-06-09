@@ -12,6 +12,9 @@ TagManager:
   - KnockT2
   - NameT1
   - NameT2
+  - WinT1
+  - WinT2
+  - MainCanvas
   layers:
   - Default
   - TransparentFX
