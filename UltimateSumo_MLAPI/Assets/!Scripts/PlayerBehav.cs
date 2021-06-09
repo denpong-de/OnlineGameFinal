@@ -90,6 +90,10 @@ public class PlayerBehav : NetworkBehaviour
     GameManager gameManager;
     private GameObject gameOverUI;
 
+    //ANIMATION
+    Animator animator;
+    bool isWalkAnim;
+
     //DEBUGGING
     [Header("Debugging")]
     [SerializeField] bool forceBlock;
@@ -125,6 +129,8 @@ public class PlayerBehav : NetworkBehaviour
         gameManager = GameObject.FindGameObjectWithTag("GameController").GetComponent<GameManager>();
         GameObject mainCanvas = GameObject.FindGameObjectWithTag("MainCanvas");
         gameOverUI = mainCanvas.gameObject.transform.GetChild(3).gameObject;
+
+        animator = this.gameObject.transform.GetChild(0).GetComponent<Animator>();
     }
 
     private void Update()
@@ -147,9 +153,25 @@ public class PlayerBehav : NetworkBehaviour
 
     void FixedUpdate()
     {
-        if (!canMove || isCooldown || gameManager.isCoutdown) { return; }
+        if (!canMove || isCooldown || gameManager.isCoutdown) 
+        {
+            isWalkAnim = false;
+            MoveAnimServerRpc(isWalkAnim);
+            return; 
+        }
+
+        //Check if player is walking.
+        if(moveVec.x != 0)
+        {
+            isWalkAnim = true;
+        }
+        else
+        {
+            isWalkAnim = false;
+        }
 
         Move();
+        MoveAnimServerRpc(isWalkAnim);
     }
 
     //------------------------------ SYNC NETWORK VALUES ----------------------------------------
@@ -171,6 +193,8 @@ public class PlayerBehav : NetworkBehaviour
     //Get values from New Input System.
     public void OnMove(InputValue value) 
     {
+        if (!IsOwner) { return; }
+
         moveVec = value.Get<Vector2>();
     }
 
@@ -189,6 +213,18 @@ public class PlayerBehav : NetworkBehaviour
         {
             moveVec.x = 0;
         }
+    }
+
+    [ServerRpc]
+    private void MoveAnimServerRpc(bool value)
+    {
+        MoveAnimClientRpc(value);
+    }
+
+    [ClientRpc]
+    private void MoveAnimClientRpc(bool value)
+    {
+        animator.SetBool("Move", value);
     }
 
     //------------------------------------ ATTACK -----------------------------------------------
@@ -213,6 +249,7 @@ public class PlayerBehav : NetworkBehaviour
     private void AttackClientRpc()
     {
         attackArea.SetActive(true);
+        animator.SetTrigger("Attack");
         Invoke("AttackEnd", 0.3f);
     }
 
@@ -262,9 +299,11 @@ public class PlayerBehav : NetworkBehaviour
         {
             case true:
                 blockArea.SetActive(true);
+                animator.SetBool("Block",true);
                 break;
             case false:
                 blockArea.SetActive(false);
+                animator.SetBool("Block", false);
                 break;
         }
     }
@@ -291,6 +330,7 @@ public class PlayerBehav : NetworkBehaviour
     private void ThrowClientRpc()
     {
         throwArea.SetActive(true);
+        animator.SetTrigger("Throw");
         Invoke("ThrowEnd", 0.3f);
     }
 
