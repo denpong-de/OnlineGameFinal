@@ -145,8 +145,10 @@ public class PlayerBehav : NetworkBehaviour
             isPlayAgain = gameValues.playAgain;
         }
 
+        if (pressThrow && _isThrow != gameValues.switchSideTrigger) { isThrow = gameValues.switchSideTrigger; }
+
         if (!pressBlock) { return; }
-        if (isThrow == gameValues.switchSideTrigger) { return; }
+        if (_isThrow == gameValues.switchSideTrigger) { return; }
 
         isThrow = gameValues.switchSideTrigger; //To check Knockback trigger on other client.
     }
@@ -159,15 +161,13 @@ public class PlayerBehav : NetworkBehaviour
             MoveAnimServerRpc(isWalkAnim);
             return; 
         }
-
-        //Check if player is walking.
-        if(moveVec.x != 0)
+        else if (moveVec.x == 0 || pressBlock || pressThrow || pressAttack)
         {
-            isWalkAnim = true;
+            isWalkAnim = false;
         }
         else
         {
-            isWalkAnim = false;
+            isWalkAnim = true;
         }
 
         Move();

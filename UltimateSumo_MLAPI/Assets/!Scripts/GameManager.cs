@@ -76,7 +76,7 @@ public class GameManager : MonoBehaviour
         else
         {
             countdownText.text = "4";
-            countdownText.fontSize = 100;
+            countdownText.fontSize = 250;
             countdownText.enabled = false;
             isCoutdown = false;
             countdownValue = 4;

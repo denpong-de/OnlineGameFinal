@@ -12,4 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0e0a30c5100ebc04c9ad8287c9499bd4, type: 3}
   m_Name: Data
   m_EditorClassIdentifier: 
-  switchSideTrigger: 0
+  switchSideTrigger: 1
+  changeNameTrigger: 0
+  playAgainRequest: 0
+  playAgain: 0
